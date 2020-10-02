@@ -1,0 +1,12 @@
+SO (Aula Retomada):
+
+- 2 provas 2 tps (sujeitos à mudança)
+- george@dcc.ufmg.br
+
+- Intermediario entre Hardware e Aplicações do Usuário
+- Interface mais simples e abstrata para as aplicações e uso eficiente do hardware
+- o SO dá uma interface alto nivel, simplificando a execução (abrir arquivo, escrever, salvar dados, recuperar dados, etc)
+- decide quem usa a CPU, operação de disco, escalonamento de atividades
+- definição depende mto do contexto (real time ou não por exemplo)
+- SO vem crescendo muito em complexidade (medida simples -> linhas de código)
+- Complexidade alta trás mais problemas (Engenharia de Software, depuração, etc)

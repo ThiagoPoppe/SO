@@ -1,0 +1,47 @@
+Sistemas Operacionas - Sincronização (Primitivas)
+
+- Para melhorar o busy wait (espera ocupada), podemos usar a chamada yield() onde o processo/thread
+  volta para a fila de pronto, "passando" a vez para o próximo. Lembrar do exemplo de um escalonador
+  RR onde o P2 fica 2 quanta esperando o unlock do P1.
+
+- Inversão de prioridades é quando um processo P1 tem maior prioridade do que P2, pórem P1 fica em
+  waiting pois P2 está acessando a área crítica. Em um escalonador de tempo real isso pode ser fatal!
+
+- O uso de yield ajuda no uso de CPU porém não resolve o problema de inversão de prioridades.
+
+- Semáforos:
+  - São primitvas de alto nível oferecidas pelo SO ou linguagem.
+  - Conceitualmente, semáforo é uma variável inteira acessível por duas operações atômicas. Se inicializarmos
+    por exemplo com o valor 10, os 10 primeiros processos terão acesso ao semáforo, e logo após isso esse valor
+    será 0. Sendo assim, outro processo só poderá ter acesso após um signal (explicada no final do tópico).
+  - Semáforos funcionam com qualquer número de processos.
+  - O semáforo em si possui condições de corrida. Podemos implementar a espera ocupada ou desabilitar as interrupções
+    como formas de soluções para o problema. Obviamente que desabilitar interrupções é muito pior, então usaremos a
+    espera ocupada.
+  - Visto que os trechos em que implementaremos a espera ocupada são pequenos, não será tão problemático como antes.
+  - O semáforo é a base para a construção de outras primitivas, como mutexes, thread pools, canais, etc. A partir de 
+    um semáforo binário conseguimos implementar um de tamanho n. Basta utilizarmos um binário para o mutex (cuida do value)
+    e outro para o wait (usado para esperar).
+
+    // acquire, down, lock        // release, up, unlock
+  - wait(int* s) {                signal(int* s) {
+      while(*s <= 0);               (*s)++;
+      (*s)--;                     }
+    }
+
+- Deadlocks:
+  - Situação onde dois ou mais processos esperam indefinidamente por um evento que um dos processos que estão esperando pode gerar.
+  - Exemplo:
+      P1: wait(S);
+      P2: wait(Q);
+      P1: wait(Q);
+      P2: wait(S);
+
+- Mutexes:
+  - São semanticamente semáforos de tamanho 1 (semáforos binários).
+  - Em pthreads além do init, lock e unlock temos o trylock, que tenta travar e retorna imediatamente caso falhe.
+
+- Observação importante:
+  - Temos que ter em mente que Locks/mutex/semafóros são caros! Com isso, ao aumentarmos o número de threads no nosso programa,
+    o tempo de execução esperado pode não ser mais igual ao observado... Esperamos um tempo constante de execução devido ao paralelismo,
+    porém, podemos ter um tempo de observação maior do que o esperado (lembrar do gráfico da aula).

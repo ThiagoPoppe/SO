@@ -1,0 +1,48 @@
+Sistemas Operacionas - Algoritmos de Escalonamento (cáp. 5)
+
+- Round Robin (RR)
+  - Cada processo recebe a CPU para ser executado em um tempo pequeno denominado de quantum.
+  - Usualmente esses quanta são da ordem de 10 a 100 milissegundos.
+  - Ao fim do tempo, o processo é preemptado e vai para o fim da fila de processos prontos.
+  - Note que a preempção periódica trás um overhead, devido a troca de contextos. Porém, nos trás também
+    uma interatividade.
+  - Caso o quantum for muito grande, o Round Robin regrede para um FIFO (First In, First Out); já quando for
+    muito pequeno o overhead se torna proibitivo, gastando mais tempo nas preempções do que nos processos em si.
+
+  - Com n processos na fila de prontos podendo assumir que:
+    - Cada processo recebe 1/n do tempo da CPU
+    - Cada processo irá executar no máximo 1 quantum de cada vez
+    - Nenhum processo espera mais do que (n-1) quanta na fila até receber a CPU
+
+  - Usualmente o Round Robin possui maior turnaround do que o SJF, porém temos uma melhor capacidade de resposta. Sendo
+    assim, interessante para sistemas interativos.
+
+  - Quanto menor o quantum mais interatividade porém maior troca de contexto (maior overhead).
+
+- Escalonamento de multiplas filas (multi-nível)
+  - Usado em sistemas que podemos classificar os processos em características diferentes, por exemplo: processos iterativos
+    e processos em batch (lote).
+  - Para os iterativos (foreground) utilizamos o RR; para os em lote/batch (background) usamos FCFS, por exemplo.
+  - Escalonamento entre filas:
+    - Prioridade fixa, por exemplo, sempre atender processos interativos primeiro. Podendo ter uma possibilidade de inanição.
+    - Cada fila é escalonada por uma fração do tempo total.
+
+  - Capaz de mover processos entre filas, sendo assim uma forma de implementar o envelhecimento, por exemplo.
+  - Escalonamento pode ser definido por número de filas, algoritmo de escalonamento de cada fila, método usado para promover ou rebaixar
+    um processo, método usado para decidir em que fila cada processo entra no sistema, etc.
+
+- Escalonamento de multi-processadores
+  - O escalonamento se complica com múltiplas CPUs, onde as coisas realmente acontecem ao mesmo tempo.
+  - Livro só aborda o caso de processadores homogêneos e com acesso uniforme à memória (mas o buraco é muito mais embaixo quando nos referimos
+    a processadores heterogêneos)
+    - Eles podem fazer compartilhamento de carga, CPUs acessam uma mesma fila, acesso à fila pode gerar contenção, etc.
+
+- Escalonamento de tempo real
+  - Preocupado com o quanto iremos demorar para ativar e responder uma tarefa.
+  - Processos podem estabelecer demandas em termos de tempo de ativação de tarefas.
+  - Essencial para sistemas de controle de processos de precisão e multimídia.
+  - Hard real-time (tempo rígido)
+    - Devem completar tarefas em um tempo garantido
+  - Soft real-time (tempo maleável)
+    - Requerem que processos críticos recebam prioridade superior as demais
+    - Podendo ter penalizações a medida que o tempo passa.

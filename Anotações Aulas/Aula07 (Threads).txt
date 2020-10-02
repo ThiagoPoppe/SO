@@ -1,0 +1,57 @@
+Sistemas Operacionais - Programação com Threads (cap. 4)
+
+- Uma thread é um fluxo de controle de instruções, relacionada a uma linha de execução dentro de um programa.
+  Já um processo é definido por um espaço de memoria, os recursos alocados e UM ou MAIS threads. Ou seja, processos
+  possuem threads!
+
+- Cada thread possui um contador de programa, registradores e pilha de execução. Elementos diretamente relacionados
+  com fluxo de controle de instruções de forma independente uma das outras.
+
+- Principais benefícios:
+  - Compartilhamento de recursos (dados, arquivos, etc)
+  - Capacidade de resposta ampliada (mais de uma linha do processo rodando simultaneamente)
+
+- Threads de usuário (bibliotecas):
+  - Mais "leves", pois o overhead se limita ao programa
+  - Se o kernel não reconhece, pode ser ineficiente
+
+- Threads de kernel:
+  - Melhores integradas ao escalonador do SO
+  - Mais overhead
+
+- Mapeamento muitos-para-um:
+  - Muitas threads de usuário mapeadas para uma única thread de kernel. Ocorre quando o SO não reconhece
+    threads, apenas os processos que estão sendo executados.
+  - Um ponto negativo é que se uma thread faz uma chamada do SO bloqueante, todo o processo é suspenso,
+    mesmo que outras threads pudessem ser executadas. Com isso, as bibliotecas precisam converter todas as
+    chamadas bloqueantes em não bloqueantes.
+
+- Mapeamento um-para-um:
+  - Diferentemente da anterior, nessa o kernel reconhece as threads, onde na verdade cada thread de usuário
+    é uma thread de kernel.
+  - Um ponto positivo é o mapeamento simples e as chamadas bloqueantes não interfere mais nas demais threads.
+    Porém, esse mapeamento é pesado tanto no ponto de vista de estruturas de dados quanto no ponto de vista que
+    a cada troca de threads envolve a mudança para o modo protegido, podendo ter maior overhead nas operações.
+
+- Mapeamento muitos-para-muitos:
+  - Mais flexível entre modo usuário e kernel, onde o SO cria um número "suficiente" de threads visando a eficiência.
+  - Consigo executar várias threads de usuário em threads de kernel e uma chamada bloqueante de uma thread não influencia
+    na execução das demais.
+
+- Aspectos de implementação:
+  - Um sistema que implementa threads deve definir como lidar com aspectos de execução de processos
+    - Tratamento de sinais (comunicação basicamente)
+    - Fork/exec (fork é usado para criar novas threads)
+
+  - Elementos que afetam o desempenho:
+    - Os pools de threads resolvem o problema de ter que criar novamente uma thread que deixou de existir após ter terminado
+      uma execução. Sendo assim, seu principal objetivo é manter a thread ativa em um "pool" para podermos ter ela disponível
+      quando uma próxima tarefa chegar.
+    - O Scheduler Activations é usado no mapeamento muitos-para-muitos para um mapeamento eficiente de threads no nível de usuário
+      para threads no nível de kernel, com o intuito de garantir que bloqueios de threads de usuário não bloqueiem threads de kernel.
+
+- Pthreads (POSIX threads):
+  - Interface padrão POSIX (IEEE 1003.1c) pra criação e sincronização de threads
+  - É uma biblioteca de nível de usuário, onde a API define apenas o comportamento da biblioteca.
+    Sendo assim, a implementação fica a cargo do desenvolvedor.
+  - É comum em sistemas Unix em geral.

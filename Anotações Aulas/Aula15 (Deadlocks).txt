@@ -1,0 +1,60 @@
+Sistemas Operacionas - Deadlocks
+
+- Definição: Um conjunto de processos bloqueados, cada um de posse de um recurso e esperando por outro,
+             já sob a posse de outro processo no conjunto. Exemplo: jantar dos filósofos, onde os recursos
+             são os hashis.
+
+- Para um deadlock ocorrer devemos ter:
+  - Exclusão mútua
+  - Posse durante a espera, onde o processo tem posse de ao menos um recurso e aguarda por recurso na posse
+    de outro processo
+  - Não preempção do recurso, ele deve ser liberado voluntariamente
+  - Espera circular
+
+- Se não há ciclos no grafo de alocação, não teremos deadlock; se o grafo contém ciclos e se recursos só têm
+  uma instância, teremos deadlock; se há mais de uma instância, é posssível termos deadlock.
+
+- Formas de lidar com deadlocks:
+  - 1) Garanta que por construção eles não acontecem. Solução em um nível mais abstrato, adicionando restrções
+       em como as requisições são feitas (prevention)
+  - 2) Evite deadlocks antes que eles ocorram. SO tem informação sobre alocação de recursos e decide sobre
+       esperas para cada requisição (avoidance)
+  - 3) Detecte quando um deadlock ocorre e recupere o sistema a um estado aceitável (detection)
+  - 4) Simplesmente ignore o problema, deixando a cargo do programador resolver. Usado na maioria dos sistemas,
+       inclusive o Linux
+
+- Prevention:
+  - 1) Prevenir a exclusão mútua: não há como evitar, visto que é necessária para recursos não compartilháveis.
+  - 2) Prevenir posse durante a espera: não permitir que processos peçam recursos aos poucos. Ou seja, pedem todos
+       de uma vez ou liberam todos os que detêm antes de pedir outros. Isso pode levar à baixa utilização dos recursos
+       ou até mesmo inanição (se tivermos uma quantia alta de recursos requisitados).
+  - 3) Prevenir não preempção: se um processo não conseguir alocar um novo recurso, deve abrir mão dos que já detém.
+       Implicitamente, eles serão adicionados à sua lista de requisições atual. Sendo assim, o processo só poderá
+       continuar quando todos os recursos puderem ser obtidos (pode levar à inanição).
+  - 4) Prevenir espera circular: Definir uma ordenação total para todos os tipos de recursos disponíveis, exigindo que
+       todo processo requisite recursos sempre em ordem crescente, impedindo assim a formação de ciclos no grafo. Isso
+       pode gerar ineficiência quanto ao uso dos recursos.
+
+- Avoidance:
+  - Método mais simples e útil, onde cada processo declara o máximo de recursos que pode vir a necessitar.
+  - O algoritmo avalia dinamicamente cada alocação de recursos para garantir que não se forme nenhuma espera circular.
+    A alocação de recursos é feita pela disponibilidade instantânea e as demandas máximas declaradas.
+  
+  - Estado seguro (de segurança):
+    - Uma sequência {P1, P2, ..., Pn} é segura se para Pi: os recursos que Pi pode requisitar não excedam o do sistema e
+      a soma do que está disponível com as demandas máximas de todos os Pj (j < i).
+    - Se os recursos não estiverem disponíveis, Pi pode esperar pelo término de todos os Pj. Quando Pi terminar, ele
+      liberará todos os recursos, podendo assim serem usados por P(i+1).
+
+  - Se um estado é seguro não há deadlocks; se um estado é inseguro há possibilidade de deadlocks.
+  - Impedimento (avoidance) quer garantir que o sistema nunca entre em um estado inseguro.
+
+- Algoritmo do grafo de alocação de recursos:
+  - Válido para recursos únicos (sem réplicas).
+  - Aresta de requisição Pi -> Rj será tracejada, indicando que Pi pode vir a requisitar Rj, tornando uma aresta de
+    solicitação quando o pedido ocorre realmente. Quando houver a liberação do recurso a aresta volta a ser de
+    requisição.
+  - Todos os recursos devem ser requisitados a priori no sistema.
+  - Para cada requisição verificamos se ao atender ela, invertendo a aresta de requisição, iremos ter um ciclo no grafo.
+    Caso o ciclo existe o estado seria inseguro e o processo é suspenso temporariamente; senão o estado é seguro e a
+    solicitação pode ser atendida.

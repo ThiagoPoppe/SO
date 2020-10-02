@@ -1,0 +1,63 @@
+Sistemas Operacionais - PThreads
+
+- pthread_t (objetos do pthreads)
+  - Estruturas opacas (o programador não precisa conhecer como foi implementado)
+  - Possui o necessário para manipular threads ao longo do programa
+
+- pthread_create (criação de uma thread)
+  - pthread_t* thread_p (saída, sobreescreve)
+  - const pthread_attr_t* attr_p (ponteiro de atributos, NULL caso queira usar default)
+    - Atributos seriam escalonamento, prioridade, etc
+  - void* (*start_routine) (void) (a função de entrada)
+  - void* arg_p (argumento da função)
+
+- Nós chamamos a função pthread_join uma vez para cada thread. Uma única chamada para
+  pthread_join irá esperar a thread associada ao objeto pthread_t, passado para a mesma,
+  concluir sua execução, retornando o valor desejado (será guardado no segundo parâmetro
+  da função, caso não seja NULL).
+
+- Para pararmos realmente uma thread precisamos "matar" a mesma. Podemos usar a função
+  pthread_kill que irá mandar um sinal assíncrono definido pelo S.O, ou pthread_cancel
+  que irá cancelar a execução.
+
+
+
+- Anotação do corpo básico de um programa usando PThreads em C
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h> // Declara as funções, constantes, tipos, etc do Pthreads
+
+/* Variável Global: acessível a todas as threads */
+int thread_count;
+
+void* Hello(void* rank); /* Thread function */
+
+int main(int argc, const char** argv) {
+  long       thread; /* Usar long em caso de sistemas 64-bits */  
+  pthread_t* thread_handles; /* Ponteiro para nossas threads */  
+
+  /* Obtendo o número de threads através da linha de comando */
+  thread_count = strtol(argv[1], NULL, 10);
+
+  thread_handles = (pthread_t*) malloc(thread_count*sizeof(pthread_t)); /* Alocando ponteiro */
+
+  for (thread = 0; thread < thread_count; thread++)
+    /* Criação das threads */
+    phtread_create(&thread_handles[thread], NULL, Hello, (void*) thread);  
+
+  printf("Hello from main thread\n");
+
+  for (thread = 0/ thread < thread_count; thread++)
+    /* Realizando o join das threads */
+    pthread_join(thread_handles[thread], NULL);
+
+  free(thread_handles); /* Desalocando ponteiro */
+  return 0;
+}
+
+/* Corpo da função Hello */
+void* Hello(void* rank) {
+  long my_rank = (long) rank; /* Usar long em caso de sistemas 64-bits */
+  printf("Hello from thread %ld of %d\n", my_rank, thread_count);
+}

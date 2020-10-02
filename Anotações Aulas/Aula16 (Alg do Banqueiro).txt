@@ -1,0 +1,72 @@
+Sistemas Operacionais - Deadlocks (Algoritmo do Banqueiro)
+
+- Aplicável a recursos com múltiplas cópias (novidade com relação à última aula)
+- Cada processo deve indicar requisitos máximos, onde quem requisita algo pode ter que esperar
+  e quem recebe recursos deve devolvê-los em um tempo finito.
+- Tenta identificar um estado seguro!
+
+- Sejam 'n' processos e 'm' tipos de recursos:
+  - Disponível[m]: # de instâncias disponíveis
+  - Max[n][m]: demandas máximas de cada processo
+  - Alocação[n][m]: situação corrente
+  - Necessidade[n][m]: quanto ainda se pode pedir
+    - Need[i][j] = Max[i][j] - Allocation[i][j]
+
+- Algoritmo de teste de segurança:
+  - Complexidade = O(m*n^2)
+
+  Acessível = Disponível
+  Término = { false, para todo 'n' }
+
+  1) Ache um processo i tal que
+    a) Término[i] == false
+    b) Necessidade[i] <= Acessível // comparação entre vetores (<= para todos!)
+
+  2) Se achou
+    a) Acessível = Acessível + Alocação[i] // pois iremos liberar recursos ao executar
+    b) Término[i] = true
+    c) Retorne ao passo 1
+
+  3) Seguro = (Término[i] == true, para todo i) // se tiver um false indica que Necessidade[i] > Acessível
+
+
+- Algoritmo de solicitação de recursos por Pi:
+  Solicitação[m] = demandas de cada P.
+  
+  0) Se Solicitação > Necessidade -> ERRO
+  1) Se Solicitação > Disponível -> Pi aguarda
+
+  2) Caso contrário, aloque os recursos:
+    a) Disponível = Disponível - Solicitação
+    b) Alocação[i] = Alocação[i] + Solicitação
+    c) Necessidade[i] = Necessidade[i] - Solicitação
+
+  3) Se estado final é seguro -> FIM
+  4) Senão, restaura estado anterior e Pi espera
+
+
+- Detecção de Deadlocks:
+  - Recursos têm instâncias únicas:
+    - Semelhante aos algoritmos de impedimento! Definir um esquema de recuperação
+    - Manter um grafo de espera, derivado do grafo de alocação onde vértices são apenas processos e Pi -> Pj significa que
+      Pi solicita recurso detido por Pj.
+    - Um deadlock é dado quando se acha um ciclo no grafo (espera circular).
+    - Periodicamente executamos o algoritmo de busca de ciclos, que possui complexidade O(n^2). Devemos tomar cuidado, pois
+      essa solução pode se tornar muito cara e proibitiva.
+
+  - Recursos tem múltiplas instâncias (otimista, se solicitação = 0 então supomos que ele terminará sem solicitar nada):
+    - Semelhante à detecção de estado segudo no algoritmo do banqueiro:
+      - Disponível[m] = # de instâncias disponíveis
+      - Alocação[n][m] = situação corrente
+      - Solicitação[n][m] = quanto cada processo pede
+
+      - Diferença apenas que Término[n] = { soma(alocação[n][]) = 0 }
+
+- Detecção frequente:
+  - Pouco tempo de espera
+  - Pouca chance de "propagação" do travamento
+  - Overhead de detecção alto
+
+- Detecção esporádica:
+  - Menor overhead de detecção
+  - Pode encontrar muitos ciclos

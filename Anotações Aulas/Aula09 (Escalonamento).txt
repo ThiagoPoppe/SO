@@ -1,0 +1,57 @@
+Sistemas Operacionas - Escalonamento de CPU (cáp. 5)
+
+- Objetivo da multiprogramação: maximização do uso da CPU. Quando um processo começa um pico de
+  I/O (I/O burst) outro deve assumir a CPU para evitar ociosidade (idle).
+
+- Obs.: nenhum processo deve controlar a CPU indefinidamente para melhorar a interação (não poderia
+  usar múltiplas tabs no navegador, por exemplo).
+
+- A distribuição de picos de CPU (CPU burst) nos mostra que os processos em grande parte usam
+  pouco a CPU. Os picos ocorrem com menor frequência, ficando assim em idle e tendo picos de I/O.
+
+- Escalonador de CPU (scheduler):
+  - Elemento central que toma decisões sobre qual processo utilizará a CPU ao longo do tempo.
+  - Controla a mudança de estados dos processsos.
+  - Ocorre quando um processo chaveia de "em execução" para "pronto", "em execução" para "em espera",
+    "termina", "em espera" para "pronto", etc.
+
+- Não preemptivo:
+  - Não é interrompido por um evento externo.
+  - Processo só deixa a CPU se tiver que esperar por I/O ou intencionalmente.
+  - Possui uma implementação mais simples, porém é pouco útil quando tratamos de sistemas interativos.
+
+- Preemptivo:
+  - O escalonador periodicamente interrompe o processo, podendo mudar seu estado para pronto, tirando
+    o mesmo de execução. Mesmo se esse processo não estiver fazendo I/O ou mesmo antes desse processo
+    intencionalmente deixar a CPU.
+  - Possui uma implementação mais complexa, porém o compartilhamento da CPU é garantido.
+
+- Despachante (dispatcher):
+  - Módulo responsável por dar o controle da CPU a cada processo no escalonador.
+  - O escalonador toma a decisão e o dispatcher executa essa decisão, trocando o contexto de execução,
+    chaveia para o modo de usuário e desvia para o ponto apropriado do programa.
+  - É um elemento central, apesar de não ser tomador de decisão. Com uma execução eficiente, a troca
+    de processos e a multiprogramação tenha um preço não muito caro! Se for muito caro, inviabiliza
+    a multiprogramação...
+  - Latência de despacho seria o tempo gasto para o despachante interromper um processo e iniciar a
+    execução de outro.
+
+- Critérios para avaliação de algoritmos:
+  - Utilização da CPU (maximização)
+  - Throughput - taxa de término de processos (quantos processos conseguimos realizar dado uma
+    quantidade de tempo). É uma métrica variável dada a carga de trabalho que estamos executando.
+    Precisamos de uma contextualização!
+  - Turnaround - tempo para completar um processo (minimização). Tempo entre o início da submissão e
+    o término do processo.
+  - Tempo de espera - tempo gasto na fila de pronto, mede o quanto que os processos estão competindo
+    pela CPU. Indicador de que temos mais processos para ser executados do que recursos disponíveis.
+  - Tempo de resposta - tempo entre a requisição e o início da entrega da resposta em sistemas
+    interativos (de tempo compartilhado). Não confundir com Turnaround!
+
+- Em outras palavras queremos maximizar a utilização de CPU e o throughput, e minimizar o tempo de
+  turn-around, tempo de espera e tempo de resposta.
+
+- Devemos ter um balanceamento entre esses critérios caso estejamos desenvolvendo algo genérico, ou
+  focar em um critério específico para tentar melhorar-lo. Temos que ter em mente que alguns desses
+  critérios podem entrar em conflito. Por exemplo, as decisões tomadas para garantir a maximazação
+  do throughput podem ir na direção contrária daquelas que minimizariam o tempo de resposta.

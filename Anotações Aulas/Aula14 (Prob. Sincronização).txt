@@ -1,0 +1,82 @@
+Sistemas Operacionas - Sincronização (Problemas Clássicos)
+
+- Lembrete da aula passada:
+  wait(int* s) {             signal(int* s) {
+    while (s <= 0);            (*s)++;
+    (*s)--;                  }
+  }
+
+- Produtores e Consumidores (buffer limitado)
+  - Fila limitada de tamanho N (buffer, troca de informações)
+  - Produtor trava quando a fila tem N elementos
+  - Consumidor trava quando a fila tem 0 elementos
+
+	sem_t* mutex = 1;     // acesso exclusivo ao buffer
+	sem_t* empty = BUFSZ; // # de buffers vazios
+	sem_t* full  = 0;
+
+	Producer:                        Consumer:
+	do {                             do {
+	    // Gerar item                    wait(full);                  
+	    wait(empty);                     wait(mutex);
+	    wait(mutex);                     // Seção crítica
+            // Seção crítica                 // item <- buffer
+	    // item -> buffer                signal(mutex);
+            signal(mutex);                   signal(empty);
+	    signal(full);                    // Processa item
+	} while(1);                      } while(1);
+
+
+- Jantar dos Filósofos
+  - Mesa circular com 5 filósofos e 5 pratos de macarrão.
+  - Filósofos comem e pensam alternadamente (não se atém a apenas uma tarefa).
+  - Para comer, os filósofos devem usar 2 hashis, sendo que existe apenas um entre cada par de prato.
+  - Se conseguir pegar 2 hashis, ele come por alguns instantes e depois larga os hashis.
+  - Problema: hashis são compartilhados.
+
+	Solução #1 (podendo gerar deadlocks - todos saem de pensar para terem apenas 1 hashi)
+	Philosopher i:
+	sem_t** chopstick = [1, 1, 1, ...]
+	do {
+	    // Pense
+	    wait(chopstick[i]);
+	    wait(chopstick[(i+1) % 5]);
+	    // Coma
+	    signal(chopstick[i]);
+	    signal(chopstick[(i+1) % 5]);
+	} while (1);
+
+	Solução dos deadlocks:
+	- Pegar garfo de menor ID
+	  - Será o garfo da esquerda para todos menos para o último filósofo
+	  - Sempre alguém vai conseguir comer
+	  - A conclusão, é que removemos o ciclo de dependências dos garfos
+
+	- Garçon (observador)
+	  - Trava todos os garfos
+	  - Escolhe quem pode comer
+
+
+- Leitores e Escritores
+  - Espaço de memória que pode ser lido e escrito (um banco de dados, por exemplo)
+  - Apenas 1 escritor pode editar a memória
+  - N-Leitores podem ler (não causam problemas)
+  - Porém, a leitura não pode ser corrompida por um escritor (valor desatualizado)
+
+	sem_t* mutex  = 1; // bloquear o acesso a rdcnt
+	sem_t* writer = 1; // exclusão mútua de escritores
+	int    rdcnt  = 0; // # de processos lendo os dados
+
+	Writer:					Reader:
+	do {                                    do {
+	    // Outro código                         wait(mutex);
+	    wait(writer);                           rdcnt++;                             
+	    // Modifica um dado                     if (rdcnt == 1) wait(writer); // bloqueia escritores
+	    signal(writer);                         signal(mutex);
+	} while (1);                                // Ler dados
+						    wait(mutex);
+						    rdcnt--;
+						    if (rdcnt == 0) signal(writer); // Libera escritores
+						    signal(mutex);
+						    // Outro código
+						} while (1);

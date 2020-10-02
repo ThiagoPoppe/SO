@@ -1,0 +1,45 @@
+Sistemas Operacionais - Linking and Loading
+
+- ELF: Executable and Linkable Format
+  - Possui um cabeçalho
+  - Dá uma forma intermediaria de um código já compilado
+  - Extrai informações que são úteis durante a ligação
+  - Serve como base durante o processo de ligação.
+
+- Source Code --Compiler--> Assembly Code --Assembler--> Object Code (ELF)
+  --Linker--> Executable --> Loader
+
+- A ligação vai resolver problemas de endereçamento entre os módulos (objetos)
+  como variáveis globais, gerando um executável.
+
+-  Ligação:
+  - Utiliza tipos de arquivos específicos, como .o (código binário, .text, e
+    dados, .data); .out/.exe (executável final); .so (similar ao .o mas não
+    precisamos combinar em tempo de compilação, mas sim em tempo de carga), por
+    exemplo DLLs no Windows. Todos usam o formato ELF por baixo.
+
+- Tipos de Linkagem:
+  - Compile time (.o, .a): Cola os .o
+  - Load time (.so): Loader do SO; ao carregar o programa procure as referências
+    e carregue
+  - Runtime: tempo de execução, dlopen em C, reflections em Java.
+
+- Estática (Compile Time):
+  - Não dependemos de nada externo!
+  - Arquivos .a, que são uma coleção de .o (libc.a)
+  - Problema: as dependências podem ser muito grandes!! Linkar de forma estática
+    o libc.a gera em torno de ~5MB.
+  - Problema2: Ordem importa! gcc -static ./liball.a main.c -> error: ld
+    returned 1 exit status; gcc -static main.c ./liball.a -> OK!
+    - O compilador não sabia sobre a requisição de métodos no main.c!
+
+- Dinâmica (Load Time e Runtime):
+  - Uso de .so (bibliotecas dinâmicas)
+  - Durante a leitura do programa resolvemos as ligações de forma dinâmica!
+  - Abordagem semântica similar
+  - Manter símbolos undefined com um ponteiro para onde eles existem
+  - Se 2 programas usam o mesmo .so só precisamos carregar 1 vez
+  - Global Offset Table (onde cada biblioteca inicia):
+    - Relativamente, não importa o local inicial dado que a biblioteca é fixa.
+      Basta fazer uma + no addr.
+    - gcc -fPIC garante que endereços são relativos.

@@ -1,0 +1,93 @@
+Sistemas Operacionais - Gerência de Memória (Segmentação)
+
+- Endereço lógico: gerado pela CPU (virtual) criado durante a execução de um
+  programa; não necessariamente terá um mapeamento direto para o endereço
+  físico.
+
+- Endereço físico: visto pela unidade de memória (real).
+
+- Mapeamento depende de recursos de HW; unidade de gerência de memória MMU e
+  em sistemas simples (sem MMU), virtual = real.
+
+- Programas em linguagem de alto nível (quase) nunca referenciam endereços
+  específicos. A vinculação pode ocorrer em vários momentos como: compilação,
+  carga do programa na memória, tempo de execução.
+
+- Carga Dinâmica:
+  - Partes do programa são carregados na memóra só quando se tornam necessárias
+    melhorando assim a utilização da memória.
+  - Não necessariamente exige suporte do S.O, pode ser controlado pelo programa
+    (complexo), por exemplo overlays no DOS.
+  - Forma de executar programas que são maiores do que a memória que temos
+    disponível.
+
+- Ligação Dinâmica:
+  - Vinculação postergada até a execução
+  - Pequeno trecho de código (stub) ocupa o lugar do trecho do programa que não
+    foi vinculado. Ao ser executado, localiza a rotina correta e substitui a si
+    mesmo com o código correto
+  - Exige suporte do S.O para controlar o processo e é particularmente útil para
+    bibliotecas (DLLs).
+
+- Alocação contígua:
+  - Cada processo ocupa um bloco único de memória física.
+  - Forma simples de utilização da memória.
+  - Possuimos pelo menos duas partições:
+    - S.O residente (memória baixa, vetor de interrupções)
+    - Processo(s) de usuário(s) - diversidade é desejável
+
+  - Com múltiplos processos, cada processo ocupa um bloco de memória que ao
+    terminar libera esse bloco. Novos processos que chegam devem ocupar esses
+    "buracos", ficando a cargo do S.O controlar partições e buracos.
+
+- Swapping (permutação de processos):
+  - Usado quando ocupamos mais área de memória do que disponível.
+  - Processos inteiros podem ser transferidos temporariamente para a memória
+    secundária e posteriormente trazidos de volta.
+  - Requer uma "memória de retaguarda" (backing store) grande o suficiente para
+    guardá-los. Com isso, temos um maior overhead no tempo de transferência.
+  - Presente em diversos S.O (Unix, Linux, Win, ...)
+
+- Problema de alocação dinâmica:
+  - Onde colocar um processo?
+    - First-fit (primeiro apto): primeiro que couber
+    - Best-fit (mais apto): o de tamanho mais próximo
+    - Worst-fit (menos apto): sempre o maior buraco
+ 
+    - First e best se saem melhor que worst-fit em termos de velocidade e 
+      utilização do espaço. Mas nenhum resolve definitivamente o problema de 
+      fragmentação.
+
+- Fragmentação:
+  - Quebra de espaço em frações não utilizáveis.
+  - Fragmentação externa: memória não utilizada dividida em muitos buracos
+    pequenos demais para serem úteis.
+  - Fragmentação interna: limitações na forma como blocos são alocados podem
+    gerar buracos dentro do bloco. Por exemplo: alocação apenas em blocos de
+    4 KiB e um processo utiliza 2KiB.
+
+- Compactação:
+  - Solução para a fragmentação externa.
+  - A solução reside em mover blocos ocupados para perto uns dos outros,
+    agrupando os buracos em um único bloco maior. Porém, só é possível com
+    relocação dinâmica.
+  - Outra forma de lidar com fragmentação externa é permitir alocação não
+    contígua (paginação ou segmentação).
+
+- Segmentação:
+  - Divisão da memória do processo em unidades, baseado na visão lógica do
+    usuário/programador.
+  - Um programa é uma coleção de segmentos de memória independentes (código, 
+    dados, pilha, etc).
+  - Cada um pode ser acessado independentemente, como se fossem diferentes
+    dimensões.
+  - Tornou-se popular ao ser adotada pela Intel.
+  - Porém, temos os mesmos problemas de alocação contígua! Não resolvem, mas 
+    minimizam os problemas.
+
+  - Endereço lógico é uma dupla: <segmento, offset>.
+  - Tabela de segmentos mapeia segmento em uma área da memória (base + limite)
+  - Segmentos podem ser compartilhados, permitindo controle de acesso refinado
+    (código != pilha != dados).
+  - Pré-definidos (fixos) como Stack Segment, Code Segment, etc; Enumeráveis
+    como tabela de segmentos (com limite).

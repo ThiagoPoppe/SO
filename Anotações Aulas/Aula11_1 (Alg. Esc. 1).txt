@@ -1,0 +1,42 @@
+Sistemas Operacionas - Algoritmos de Escalonamento (cáp. 5)
+
+- Gráfico de Gantt (ou Gantt Chart) será usado para visualizar a execução dos processos ao longo do tempo.
+- Embaixo temos o tempo decorrido (unidade de tempo irrelevante) e dentro dos retângulos, os processos que estão sendo executados
+
+- First-Come, First-Served (FCFS)
+  - Decisão baseada na ordem de chegada dos processos.
+  - Pela ordem de chegada, podemos ter o efeito comboio, ou seja, processos pequenos são atrasados pelos grandes.
+  - Podemos mudar o tempo de espera médio radicalmente! Dada uma ordem podemos ter 3 unidades de tempo, ou 17, como visto na aula.
+  - A ordem de execução é um fator externo, já vem pronto para o escalonador.
+
+- Shortest-Job-First (SJF)
+  - Decisão baseada no tempo de CPU que o processo necessita para executar, ou também chamado de pulso.
+  - Uma característica interessante de escalonadores SJF é que eles são ótimos quanto ao tempo médio de espera.
+  - Além da duração de cada processo, precisamos do dado de chegada do mesmo. Ou seja, em qual unidade de tempo, o processo estava
+    pronto para execução.
+
+  - Forma preemptiva:
+    - Caso chegue um processo de pulso menor do que o que falta do processo corrente, o escalonador força a preempção do último.
+    - Esse algoritmo também é chamado de Shortest Remaining Time First (SRTF).
+    - Lembrar que a comparação é feita através de duração - tempo executado!
+    - O cálculo de tempo de espera médio leva em conta também o tempo que os processos levaram na fila de espera após sofrerem uma
+      preempção.
+  - Forma não preemptiva:
+    - A comparação dos pulsos é feita apenas nos processos que estão à espera da CPU.
+    - Sendo assim, o primeiro processo sempre será executado até o final da sua duração.
+    - Usualmente, quanto se tem um empate na duração, podemos desempatar com relação ao tempo de chegada! Aquele com menor tempo de chegada
+      é executado primeiro.
+
+  - Problema do SJF é que a decisão é feita utilizando a duração do pulso, precisando estimar assim, quanto tempo um processo irá gastar de CPU
+    a cada vez que ele chega na fila de pronto. Isso é um problema complexo, podendo ser feito por vários tipos de estimadores. Na prática, saber
+    esse tempo nem sempre é algo razoável, dificultando seu uso.
+
+- Escalonamento com prioridades
+  - A decisão é feita baseada no valor de prioridade (inteiro) dado a cada processo.
+  - Comuns em ambientes modernos.
+  - Usualmente, menor valor corresponde a uma maior prioridade.
+  - Eles podem se tanto preemptivos como não preemptivos.
+  - De certa forma o SJF é um escalonamento com prioridade, onde esta, por sua vez, é o tamanho previsto do pulso de CPU.
+  - Um problema é a inanição (ou starvation) dos processos, onde, processos de baixa prioridade pode nunca ser executados.
+    Para resolver esse problema, podemos usar a técnica de envelhecimento (ou aging), que por sua vez, de tempos em tempos,
+    irá aumentar a prioridade desses processos que ficam na fila.

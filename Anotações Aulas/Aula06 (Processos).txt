@@ -1,0 +1,84 @@
+SO - Processos
+
+- Throughput -> vazão, quantia de tarefas que conseguimos executar em uma unidade de tempo
+- Formas de organização: camadas, módulos, micro-kernel, máquinas virtuais (problemas de ES).
+- Camadas:
+  - O SO é divido em níveis. Cada um dos níveis é uma camada (Hardware -> ... -> Interface do usuário)
+  - A cada camada, a interface fica mais alto nivel.
+  - Dificulade em definir o que fica em cada camada (mtos serviços usam o mesmo software)
+  - Overhead se a operação usar muitas camadas (n chamadas para chegar no hardware).
+  - Ex.: MS-DOS (poucas camadas), problemas no respeito de organização de camadas. Da aplicação
+    existia um acesso direto aos drivers (parte da culpa da limitação da época)
+
+- Unix.: primeiro SO a ser escrito em uma linguagem de alto nivel (C).
+  - Estrutura monolitica, tendo o kernel e tudo que não é kernel (usuária). Tudo que esta no kernel
+    podemos fazer chamadas arbitrárias.
+  - Ganho principal: DESEMPENHO em relação à de camadas, por ter as chamadas arbitrárias (chamadas de
+    função, troca de informação rápida).
+
+- Micro-kernel: motivados pela dificuldade de manter tudo dentro do kernel (cada vez maiores)
+  - Manter o menor kernel possível e mover todo o resto para o espaço do usuário
+  - Tarefas executadas por processos que trocam mensagens entre si (system calls)
+  - Vantagens:
+    - Menos código em modo protegido
+    - Mais fácil de estender
+  - Desvantagem:
+    - Custo de comunicação por meio do espaço do kernel (Aplicação -> system call -> Arquivos -> ...)
+      Mudança de modo de usuário para kernel, etc. Se fosse monolitico, fariamos uma chamada apenas e
+      as mensagens seriam trocadas de forma local (mais rápida).
+
+  - Existem estruturas hibridas (micro-kernel e monolitica), exemplo o iOS.
+
+- Módulos:
+  - Lembra um pouco a estrutura monolitica
+  - Perde um pouco do ponto de vista de organização (micro-kernel) mas ganha em desempenho
+  - Object based
+  - Comum na maioria dos SO atuais
+  - Kernel não é mais exatamente monolitico
+
+- Máquinas virtuais:
+  - Extensão do enfoque em camadas e micro-kernel
+  - Quando é preciso de uma chamada para o kernel ele se comunica com uma VM, que é gerenciada
+    por uma implementação que dá acesso ao hardware.
+  - Falaremos mais no futuro
+
+- DMA: forma do dispositivo escrever direto na memoria sem precisar da CPU.
+
+- Interrupções são sinais externos dados pelo HW
+- Outra forma é inspecionar e ver qual dispositivo lançou a interrupção e precisa do SO para terminar
+  sua aplicação (pooling)
+
+- Tratador de interrupção executa no kernel. Cada vez que temos uma interrupção, mudamos do modo de
+  usuário para o de kernel. Uma vez concluida, voltamos para o modo de usuário e voltamos a executar
+  a aplicação.
+
+- Interrupções -> Hardware, Traps -> Software, maneira que os softwares tem como conversar com o SO
+
+- HW tem mode bit: monitor/usuário, não deixar com que o usuário use interrupções.
+
+------------------------------ PROCESSOS -----------------------------------------
+- Processo seria um programa em execução
+  - Um contador de programa, pilha de chamadas, área de memória, dados de acompanhamento (estado)
+
+- PCB: bloco de controle de processos, cria informações associadas com cada processo (estado de
+  eventos de E/S, registradores da CPU, escalonamento da CPU, etc)
+  - Implementado de maneira distinta a depender do SO observado
+
+- Tres etapas dos processos
+  - Criação: inicia o PCB e definição da imagem na memoria
+    - Hierarquia similar ao que temos em uma árvore
+    - Processo root que dá origem aos outros processos, e assim sucessivamente
+  - Execução: escalonado, comunicação com outros processos
+  - Terminação: liberar recursos alocados, avisar ao parent que o processo terminou, pedir para o SO
+    desalocar
+
+- Paralelismo aparente, não acontece na pratica
+- A ordem com que escalonamos as requisições para o disco pode afetar o desempenho do mesmo
+- Processos I/O bound -> intensivos em E/S (pouca cpu, mais tempo esperando por E/S que computando)
+- Processos CPU bound -> intensivos em processamento (muita cpu)
+
+- Escalonamneto de medio prazo: usado quando se tem pouca memoria, monitora o sistema e verifica se
+  o sistema esta pouco produtivo (crash), tira processos de execução e salva no disco
+
+- Troca de contexto, custo de chaveamento entre os processos (o time-slice deve levar em conta esse
+  custo).

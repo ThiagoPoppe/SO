@@ -1,0 +1,79 @@
+Sistemas Operacionas - Sincronização (Algoritmos)
+
+- Usaremos sincronização sempre que estivermos mexendo com áreas de memória compartilhadas, por exemplo,
+  através da função mmap para processos e thread (por natureza). Note que cada thread tem um stack próprio,
+  porém, há o heap sendo compartilhado, por exemplo.
+
+- Condição de corrida:
+  - Dois processos que estão modificando uma mesma área de memória, podendo ter resultado indeterminado sem o uso
+    de sincronização.
+  
+  - Por exemplo, incremento e decremento da mesma variável compartilhada:
+    a) MOV R1, $counter   // R1 = 5
+    b) INC R1             // R1 = 6
+    ---- TROCA DE CONTEXTO ----
+    x) MOV R2, $counter   // R2 = 5
+    y) DEC R2             // R2 = 4
+    ---- TROCA DE CONTEXTO ----
+    c) MOV $counter, R1   // $counter = 6
+    ---- TROCA DE CONTEXTO ----
+    z) MOV $counter, R2   // $counter = 4
+
+- Seção crítica:
+  - Garantir que apenas um processo acesse a estrutura por vez, evitando a condição de corrida.
+  - Requisitos da solução:
+    - Exclusão mútua, isto é, apenas um processo na seção crítica por vez.
+    - Progresso garantido, ou seja, nenhum processo fora de sua região crítica pode bloquear outros.
+    - Espera limitada, ou seja, se um processo deseja entrar na seção crítica, existe um limite no
+      número de outros processos que entram antes dele.
+
+  - Solução Bazooka:
+    - Desabilitar interrupções.
+    - Parar todo o SO, menos o processo que vai utilizar região crítica.
+    - Meio extrema, mas funcional.
+    - Perdemos tudo que aprendemos de escalonamento, além de outros problemas como processos fazendo
+      tarefas de SO.
+
+  - Variável de controle:
+    - Teremos uma variável de controle compartilhada que irá dizer qual processo irá executar.
+    - Aceitável para duas threads ou processos.
+    - Mesmo garantindo a exclusão mútua, não temos garantia de progresso e espera limitada.
+  
+  - Solução de Peterson:
+    - Similiar com a solução de uma variável de controle, porém com uma flag que indica se o processo
+      deseja entrar na seção crítica ou não.
+    - Garantimos a exclusão mútua, visto que, valor de "turn" será igual a somente o id de um dos processos.
+    - Garantimos o progresso, visto que, assim que o processo não deseja entrar na seção crítica a flag para ele
+      assume valor FALSE.
+    - Garantimos a espera limitada, visto que, um processo irá entrar na seção crítica assim que outro sair.
+    - Porém, ainda temos alguns problemas:
+      - Funciona em sistemas de um processador apenas, onde hardwares modernos com vários cores não garantem
+        sequência de operações
+      - Caches criam oportunidades de discórdia, visto que, cada CPU observa um valor diferente. Para isso, utilizamos
+        instruções atômicas de hardware, permitindo modificar o valor em um ciclo apenas, onde ou executamos ou não executamos.
+        Por exemplo o TSL (Test-and-Set).
+      - A solução funciona apenas para 2 processos, sendo mais complicada com 'n' processos.
+
+- Hardware de Sincronização (instruções atômicas):
+  - As instruções atômicas test_and_set e swap garantem exclusão mútua e progresso! Porém, não nos garante espera limitada, pois
+    é possível que o mesmo processo consiga entrar novamente no while por ter executado o restante do código de
+    forma rápida!
+
+- Exclusão mútua justa:
+  - Cada processo passa a vez para o próximo na fila.
+  - Semelhante à ideia do código que utiliza test_and_set. Porém, através de uma fila de espera, conseguimos garantir assim a espera limitada.
+  - Lógica:
+      int lock = 0; int n; // n será o número de processos
+      do {
+        waiting[i] = 1; // entrando na fila de espera
+        while (waiting[i] && test_and_set(&lock));
+        // critical section
+        waiting[i] = 0; // deixamos a fila de espera
+
+        j = (i+1) % n;
+        while((j!=i) && !waiting[j]) j = (j+1) % n; // obtendo próximo processo em espera
+        
+        if (j == i) lock = 0; // não encontramos nenhum processo em espera
+        else waiting[j] = 0;  // garantimos que o próximo processo a ser executado é o j
+        // remainder section
+      } while(1);
