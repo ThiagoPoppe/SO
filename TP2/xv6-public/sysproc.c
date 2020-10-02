@@ -89,3 +89,12 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Changes process priority
+int
+sys_setprio(void) {
+  int prio;
+  argint(0, &prio);
+
+  return setprio(prio);
+}

@@ -532,3 +532,10 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+// Changes process priority
+int
+setprio(int priority) {
+  cprintf("Priority=%d\n", priority);
+  return 22;
+}
