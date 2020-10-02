@@ -88,6 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->countdown = INTERV;
 
   release(&ptable.lock);
 
@@ -342,6 +343,7 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      p->countdown = INTERV;
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
