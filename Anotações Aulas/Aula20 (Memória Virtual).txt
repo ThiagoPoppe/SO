@@ -1,0 +1,65 @@
+Sistemas Operacionais - Memória Virtual
+
+- O código precisa estar em memória para ser executado, mas raramente o
+  programa inteiro é utilizado. O programa inteiro não é necessário (usado)
+  no mesmo tempo.
+
+- Se consideramos a possibilidade de executar programas parcialmente em memória
+  temos que:
+  - O programa não é mais limitado pelos limites da memória;
+  - Mais programas rodando simultaneamente;
+  - Aumento da utilização da CPU;
+  - Menos I/O necessário para ler e trocar programa.
+
+- Paginação sob demanda:
+  - Trazer as páginas para a memória física apenas quando necessárias.
+  - Temos alguns benefícios:
+    - Menos I/O
+    - Menor área de memória ocupada
+    - Resposta mais rápida (mais processos/usuários)
+  - Bit válido/inválido usado para controlar presença
+
+- Page fault:
+  - Lançamento de uma trap
+  - SO consulta tabela de paginação virtual:
+    - Se referência inválida = aborta o processo
+    - Se página ausente = localiza a página no disco, obtém quadro vazio, 
+      carrega página no quadro, atualiza a tabela de páginas, reinicia a
+      instrução que gerou a página.
+
+- Benefícios da memória virtual:
+  - Redução do custo de criação de processos (fork() usando copy-on-write)
+  - Acesso a arquivos mapeados em memória (mmap() -> mem. virtual associa mem.
+    e arquivo)
+
+- Copy-on-Write (COW):
+  - Duplicação de página alterável sob demanda.
+  - Processos recebem referência à mesma página, página (alterável) tem
+    permissão de escrita = 0
+  - Se algum dos processos tenta escrever teremos um page fault (nova página/
+    quadro é alocado). A partir daí, cada processo tem sua cópia.
+
+- Arquivos mapeados em memória:
+  - Normalmente o sentido é mem. -> disco.
+  - Com mmap(), pode-se fazer o oposto, ou seja, conteúdo do disco (arquivo) ->
+    espaço de mem.
+  - Simplifica o acesso a arquivos de dados, podendo ser tratados como vetores
+    na memória.
+  - Permite que processos compartilhem arquivos
+
+- Se não tivermos quadro vazio?
+  - Substituição/reposição de páginas. Encontre uma página que não esteja em
+    uso e libere o quadro (pode exigir escrita no disco).
+  - Desempenho:
+    - Página retirada pode vir a ser acessada de novo
+    - Deseja-se um algoritmo que minimize as falhas
+
+- Reposição de páginas
+  - Essencial para completar o desacoplamento entre memória física e lógica.
+  - Tabela de páginas inclui bits extras para auxiliar no processo de escolha
+    de candidatos, sendo eles:
+    - Dirty bit que indica se a página foi modificada em relação ao disco
+    - Access bit que indica se a página foi acessada "recentemente"
+
+- Relação inversamente proporcional entre número de frames e número de page
+  faults (não é linear, tem um sweet spot).

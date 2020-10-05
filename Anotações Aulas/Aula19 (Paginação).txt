@@ -1,0 +1,60 @@
+Sistemas Operacionais - Gerência de Memória (Paginação)
+
+- Memória dividida em blocos de tamanho fixo (normalmente potências de 2).
+- Blocos lógicos (páginas) mapeadas em blocos físicos (quadros) pelo HW.
+- Endereços lógicos contíguos podem estar em páginas diferentes, em
+  quadros não contíguos.
+- Programa de n páginas requer n quadros (quaisquer).
+- Não temos fragmentação externa, desde que a memória seja múltipla do
+  tamanho dos quadros. Temos fragmentação interna, última página não
+  utilizada.
+
+- Endereço lógico = <página, offset>, qual página, substituimos p -> f
+  que representa qual quadro da memória física está sendo usado,
+  lembrando que páginas contíguas não necessariamente diz que tais dados
+  são contíguos em memória física.
+
+- Gerência de quadros livres:
+  - Feita pelo SO.
+  - Muito mais simples do que na segmentação!
+
+- Compartilhamento de códigos entre processos é simples! Compartilhamento
+  de páginas. Devemos ser capazes de executar o código várias vezes sem
+  que uma execução afete a outra.
+
+- Compartilhamento de código:
+  - Endereçamento absoluto: páginas com endereços usados precisam estar nos
+    mesmos endereços lógicos em todos os processos.
+  - Endereçamento relativo: não há restrições de posicionamento.
+
+- Tabela de páginas fica na memória. Registrador especial aponta para ela
+  (PTBR - page table base register). Temos dois acessos à memória para
+  cada escrita/leitura, que são para acessar a tabela e a página. Uso de
+  cache evita 1º acesso (Translation Look-aside Buffer (TLB)).
+
+- Tabelas hierárquicas (multi-nível):
+  - Páginas não são muito grandes
+  - Solução: quebrar o endereço em várias tabelas, por exemplo: para 32
+    bits, dois níveis, cada um com 10 bits (offset fica 12).
+  - Ponteiro pra tabela que dá um ponteiro para outra, usamos um offset
+    que dará o ponteiro para a memória, usamos outro offset para acessar
+    o dado correto.
+
+- Tabelas por hash:
+  - Comuns em endereços com mais de 32 bits, onde tabelas de mais níveis se
+    tornam proibitivas.
+  - Identificador de página gera um valor de hash (tabela de hash com colisão).
+  - Na hash table temos uma lista de páginas.
+
+- Tabela de páginas invertida:
+  - Ao invés de representar a memória lógica, representamos a memória física!
+  - Uma entrada para cada quadro da memória física.
+  - Como vários processos podem ser carregados, entrada deve incluir id do
+    processo.
+  - Reduz a demanda por memória, mas aumenta o tempo de acesso.
+  - Pode-se usar uma tabela de hash para reduzir o custo da busca.
+
+- Podemos misturar segmentação com paginação, não são coisas totalmente
+  ortogonais. Usado no Multics e na arquitetura Intel 386. Flexibilidade x
+  Complexidade. Muitos SO para Intel simplesmente ignoram a segmentação, devido
+  à complexidade.
