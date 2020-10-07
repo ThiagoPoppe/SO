@@ -1,0 +1,89 @@
+Sistemas Operacionais - Memória Virtual (Algoritmos)
+
+- Menor taxa de falhas possível
+- Avaliação é feita contra uma sequência de referências à memória que seja
+  característica (computa-se o número de falhas de cada algoritmo)
+
+- A sequência de exemplo será 1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5.
+
+- First-in First-out (FIFO):
+  - Primeiro quadro a ser esvaziado vai ser aquele ocupado por mais tempo.
+  - Para 3 quadros e a sequência de exemplo tivemos 9 page faults
+  - Para 4 quadros e a sequência de exemplo tivemos 10 page faults
+  - Note que aumentamos a memória e tivemos um aumento na quantia de falhas!
+  - Anomalia de Belady, onde mais quadros não deveriam gerar mais page faults!
+
+- Algoritmo ótimo (presciente):
+  - Na prática para funcionar precisamos prever o futuro.
+  - Substitua a página que levará mais tempo para ser acessada novamente.
+  - Para 4 quadros e a sequência de exemplo tivemos 6 pages faults.
+  - Limite inferior de page faults.
+
+- Least Recently Used (LRU):
+  - Substitui a página a mais tempo sem referências.
+  - Olhar para o passado e escolher (das páginas que estão em memória) aquela
+    que foi acessada a mais tempo.
+  - O algoritmo pensa que olhar pro passado pode lhe dizer sobre o futuro.
+  - Para 4 quadros e a sequência de exemplo tivemos 8 page faults.
+  - Podemos implementar com uma contagem de tempo ou pilha.
+ 
+  - Contagem de tempo:
+    - Cada página tem registro de tempo de acesso
+    - A cada acesso, relógio é copiado para o registro da página acessada
+    - Quando se executa o LRU, busca-se a página com registro mais antigo
+      (menor).
+
+   - Pilha:
+     - Mantém-se uma pilha de acessos (dupl. endad.).
+     - A cada acesso, página referenciada vai p/ o topo.
+     - Requer mudanças em 6 apontadores.
+     - Não requer busca no momento da substituição.
+
+- Podemos implementar LRU com aproximações:
+  - Processamento a cada acesso pode ser excessivamente oneroso
+  - Aproximações reduzem o processamento a eventos periódicos
+  - Utiliza bit de referência oferecido pela MMU para cada página
+
+- Bit de referência (LRU - aproximações):
+  - Inicialmente bit = 0
+  - Alterado pelo hardware a cada acesso
+  - Subsitui-se alguma página com bit nulo (não há noção de ordem entre as
+    páginas referenciadas).
+
+- Segunda chance (LRU - aproximações):
+  - Lista circular (FIFO), sentido horário, e bit de referência.
+  - Se a página a ser substituída tem bit de referência setado:
+    - Bit = 0
+    - Deixa a página na memória
+    - Substitui a próxima na ordem que não foi referenciada
+  - Ao invés de armazenar "tempo de acesso", basta percorrer a lista de
+    forma circular.
+
+- MFU (most frequently used):
+  - Subsitui página com maior número de acessos
+  - Quem foi pouco usado ainda deve ser mais usado
+
+- LFU (least frequently used):
+  - Substitui página com menor número de acessos
+  - Privilegia páginas com muitos acessos
+  - Exige "envelhecimento" (decaimento exponencial)
+
+- Cada processo precisa de um mínimo de páginas. Podemos ter alocação fixa ou
+  por prioridade.
+
+- Aloc. fixa:
+  - Igual, onde todos recebem o mesmo número de quadros
+  - Proporcional, em função do tamanho do processo.
+
+- Thrashing:
+  - Atividade improdutiva
+  - Quando processos não tem páginas "suficientes" para executar. Page faults
+    aumentam, levando à diminuição do uso da CPU. O que faz com que o SO pensa
+    que é preciso aumentar a multiprogramação, e a demanda por quadros aumenta.
+  - Ficamos em um looping de Thrashing.
+
+- Demanda total por quadros > quadros disponíveis; senão caímos em thrashing.
+  Se isso ocorrer, é recomendado suspender um dos processos.
+
+- Podemos definir um upper bound e lower bound, mantendo a taxa de faltas baixa
+  e poder transferir quadros entre processos.
