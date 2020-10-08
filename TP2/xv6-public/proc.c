@@ -604,3 +604,24 @@ setprio(int priority) {
   cprintf("Priority=%d\n", priority);
   return 22;
 }
+
+int ps(void) {
+  struct proc* p;
+
+  //Enables interrupts on this processor.
+  sti();
+  
+  acquire(&ptable.lock);
+  cprintf("NAME \t PID \t STATE \t PRIORITY\n");
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if (p->state == SLEEPING)
+      cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "SLEEPING", p->priority);
+    else if (p->state == RUNNING)
+      cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "RUNNING", p->priority);
+    else if (p->state == RUNNABLE)
+      cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "RUNNABLE", p->priority);
+  }
+  release(&ptable.lock);
+
+  return 0;
+}

@@ -98,3 +98,8 @@ sys_setprio(void) {
 
   return setprio(prio);
 }
+
+int
+sys_ps(void) {
+  return ps();
+}
