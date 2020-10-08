@@ -89,6 +89,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->countdown = INTERV;
+  p->priority = 2; // Default priority
 
   release(&ptable.lock);
 
@@ -320,6 +321,44 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+// void
+// scheduler(void)
+// {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+//   c->proc = 0;
+  
+//   for(;;){
+//     // Enable interrupts on this processor.
+//     sti();
+
+//     // Loop over process table looking for process to run.
+//     acquire(&ptable.lock);
+//     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//       if(p->state != RUNNABLE)
+//         continue;
+
+//       // Switch to chosen process.  It is the process's job
+//       // to release ptable.lock and then reacquire it
+//       // before jumping back to us.
+//       c->proc = p;
+//       switchuvm(p);
+//       p->state = RUNNING;
+//       p->countdown = INTERV;
+
+//       swtch(&(c->scheduler), p->context);
+//       switchkvm();
+
+//       // Process is done running for now.
+//       // It should have changed its p->state before coming back.
+//       c->proc = 0;
+//     }
+//     release(&ptable.lock);
+
+//   }
+// }
+
+// Scheduler for a Multi-Level Queue Scheduler with Round-Robin
 void
 scheduler(void)
 {
@@ -337,13 +376,36 @@ scheduler(void)
       if(p->state != RUNNABLE)
         continue;
 
+      // Marking where we are in each "queue"
+      // If not used, we may schedule the same process twice on Round-Robin
+      int queue_offsets[3] = {0, 0, 0};
+
+      int found = 0;
+      struct proc* aux;
+
+      for (int prio = 2; prio >= 0; prio--) {
+        for (int i = 0; i < NPROC; i++) {
+          aux = &ptable.proc[(queue_offsets[prio] + i) % NPROC];
+
+          if (aux->priority == prio) {
+            queue_offsets[prio] = (queue_offsets[prio] + i + 1) % NPROC;
+            p = aux;
+            found = 1;
+            break;
+          }
+        }
+
+        if (found)
+          break;
+      }
+
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-      p->countdown = INTERV;
+      p->countdown = INTERV; // Reseting countdown
 
       swtch(&(c->scheduler), p->context);
       switchkvm();
@@ -356,6 +418,7 @@ scheduler(void)
 
   }
 }
+
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
