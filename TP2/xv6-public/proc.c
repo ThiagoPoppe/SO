@@ -387,7 +387,7 @@ scheduler(void)
         for (int i = 0; i < NPROC; i++) {
           aux = &ptable.proc[(queue_offsets[prio] + i) % NPROC];
 
-          if (aux->priority == prio) {
+          if (aux->state == RUNNABLE && aux->priority == prio) {
             queue_offsets[prio] = (queue_offsets[prio] + i + 1) % NPROC;
             p = aux;
             found = 1;
