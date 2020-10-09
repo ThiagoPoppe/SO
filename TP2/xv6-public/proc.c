@@ -20,10 +20,89 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+/****** QUEUE STRUCT AND FUNCTIONS ******/
+
+typedef struct {
+    int tail;
+    int size;
+    struct proc* procs[NPROC];
+} queue_t;
+
+queue_t prio0, prio1, prio2;
+
+void create_queue(queue_t* q) {
+    q->size = 0;
+    q->tail = 0;
+    for (int i = 0; i < NPROC; i++)
+        q->procs[i] = 0;
+}
+
+// Always insert on end
+void insert_queue(queue_t* q, struct proc* p) {
+    if (q->size == NPROC) {
+        panic("Error: Queue capacity reached");
+    }
+    else {
+        q->procs[q->tail] = p;
+        q->tail++;
+        q->size++;
+    }
+}
+
+// Removes a process from queue
+void remove_queue(queue_t* q, struct proc* p) {
+    if (q->size == 0)
+        panic("Error: Queue is empty");
+    else {
+        int pos = 0;
+        while (pos < q->size && q->procs[pos] != p)
+            pos++;
+        
+        if (pos == q->size)
+            panic("Error: Process not found in queue");
+        else {
+            if (pos == NPROC-1)
+                q->procs[NPROC-1] = 0;
+            else
+                for (int i = pos; i < q->size-1; i++)
+                    q->procs[i] = q->procs[i+1];
+
+            q->tail--;
+            q->size--;
+        }
+    }
+}
+
+// Finds first process that is runnable in queue
+struct proc* peek_queue(queue_t* q) {
+  struct proc* p = 0;
+  for (int i = 0; i < q->size; i++)
+    if (q->procs[i]->state == RUNNABLE) {
+      p = q->procs[i];
+      break;
+    }
+
+  return p;
+}
+
+// Prints processes name's given a queue
+void show_queue(queue_t* q) {
+  for (int i = 0; i < q->size; i++)
+    cprintf("%s ", q->procs[i]->name);
+  cprintf("\n");
+}
+
+/****************************************/
+
 void
 pinit(void)
 {
   initlock(&ptable.lock, "ptable");
+
+  // Initializing priority queues
+  create_queue(&prio0);
+  create_queue(&prio1);
+  create_queue(&prio2);
 }
 
 // Must be called with interrupts disabled
@@ -126,6 +205,7 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
+  insert_queue(&prio2, p);
   
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
@@ -189,6 +269,26 @@ fork(void)
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
+  }
+
+  // Copying parent priority and allocating to queue
+  np->priority = curproc->priority;
+  switch (np->priority) {
+    case 0:
+      insert_queue(&prio0, np);
+      break;
+    
+    case 1:
+      insert_queue(&prio1, np);
+      break;
+
+    case 2:
+      insert_queue(&prio2, np);
+      break;
+
+    default:
+      panic("Error: Priority must be a value in (0-2)");
+      break;
   }
 
   // Copy process state from proc.
@@ -287,6 +387,15 @@ wait(void)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
+
+        // Removing process from queue
+        if (p->priority == 0)
+          remove_queue(&prio0, p);
+        else if (p->priority == 1)
+          remove_queue(&prio1, p);
+        else
+          remove_queue(&prio2, p);
+
         // Found one.
         pid = p->pid;
         kfree(p->kstack);
@@ -372,53 +481,29 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+      p = peek_queue(&prio2);
+      if (p == 0) p = peek_queue(&prio1);
+      if (p == 0) p = peek_queue(&prio0);
 
-      // Marking where we are in each "queue"
-      // If not used, we may schedule the same process twice on Round-Robin
-      int queue_offsets[3] = {0, 0, 0};
+      if (p != 0) {
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
+        p->countdown = INTERV; // Reseting countdown
 
-      int found = 0;
-      struct proc* aux;
-
-      for (int prio = 2; prio >= 0; prio--) {
-        for (int i = 0; i < NPROC; i++) {
-          aux = &ptable.proc[(queue_offsets[prio] + i) % NPROC];
-
-          if (aux->state == RUNNABLE && aux->priority == prio) {
-            queue_offsets[prio] = (queue_offsets[prio] + i + 1) % NPROC;
-            p = aux;
-            found = 1;
-            break;
-          }
-        }
-
-        if (found)
-          break;
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
       }
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      p->countdown = INTERV; // Reseting countdown
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
       c->proc = 0;
-    }
     release(&ptable.lock);
-
   }
 }
-
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -557,6 +642,7 @@ kill(int pid)
       return 0;
     }
   }
+
   release(&ptable.lock);
   return -1;
 }
@@ -601,8 +687,57 @@ procdump(void)
 // Changes process priority
 int
 setprio(int priority) {
-  cprintf("Priority=%d\n", priority);
-  return 22;
+  struct proc* p = myproc();
+
+  acquire(&ptable.lock);
+    switch (priority) {
+      case 0:
+        if (p->priority == 2) {
+          remove_queue(&prio2, p);
+          insert_queue(&prio0, p);
+        }
+        else if (p->priority == 1) {
+          remove_queue(&prio1, p);
+          insert_queue(&prio0, p);
+        }
+
+        p->priority = 0;
+        break;
+
+      case 1:
+        if (p->priority == 2) {
+          remove_queue(&prio2, p);
+          insert_queue(&prio1, p);
+        }
+        else if (p->priority == 0) {
+          remove_queue(&prio0, p);
+          insert_queue(&prio1, p);
+        }
+
+        p->priority = 1;
+        break;
+
+      case 2:
+        if (p->priority == 1) {
+          remove_queue(&prio1, p);
+          insert_queue(&prio2, p);
+        }
+        else if (p->priority == 0) {
+          remove_queue(&prio0, p);
+          insert_queue(&prio2, p);
+        }
+
+        p->priority = 2;
+        break;
+      
+      default:
+        panic("Error: Priority must be a value in (0-2)");
+        release(&ptable.lock);
+        return -1;
+    }
+  release(&ptable.lock);
+
+  return 0;
 }
 
 int ps(void) {
@@ -621,6 +756,10 @@ int ps(void) {
     else if (p->state == RUNNABLE)
       cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "RUNNABLE", p->priority);
   }
+
+  cprintf("Queue 2: "); show_queue(&prio2);
+  cprintf("Queue 1: "); show_queue(&prio1);
+  cprintf("Queue 0: "); show_queue(&prio0);
   release(&ptable.lock);
 
   return 0;
