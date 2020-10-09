@@ -169,6 +169,10 @@ found:
   p->pid = nextpid++;
   p->countdown = INTERV;
   p->priority = 2; // Default priority
+  p->ctime  = ticks;
+  p->rutime = 0;
+  p->stime  = 0;
+  p->retime = 0;
 
   release(&ptable.lock);
 

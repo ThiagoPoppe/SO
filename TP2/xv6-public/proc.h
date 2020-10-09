@@ -52,6 +52,10 @@ struct proc {
 
   int countdown;               // Process preemption countdown
   int priority;                // Process priority (0-2)
+  uint ctime; // Time when process was created
+  int stime;  // Sleeping time
+  int retime; // Ready time
+  int rutime; // Running time
 };
 
 // Process memory is laid out contiguously, low addresses first:
