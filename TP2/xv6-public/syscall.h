@@ -23,3 +23,4 @@
 #define SYS_setprio 22
 #define SYS_ps      23
 #define SYS_wait2          25
+#define SYS_yield          26

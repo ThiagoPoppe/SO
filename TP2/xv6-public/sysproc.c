@@ -112,3 +112,8 @@ sys_wait2(void) {
 
   return wait2(&retime, &rutime, &stime);
 }
+int
+sys_yield(void) {
+  yield();
+  return 0;
+}
