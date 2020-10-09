@@ -168,11 +168,16 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->countdown = INTERV;
-  p->priority = 2; // Default priority
+  p->ticks = 0;
+
   p->ctime  = ticks;
   p->rutime = 0;
   p->stime  = 0;
   p->retime = 0;
+
+  
+  p->priority = 2; // Default priority
+  insert_queue(&prio2, p);
 
   release(&ptable.lock);
 
@@ -209,7 +214,6 @@ userinit(void)
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
-  insert_queue(&prio2, p);
   
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
@@ -273,26 +277,6 @@ fork(void)
   // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
-  }
-
-  // Copying parent priority and allocating to queue
-  np->priority = curproc->priority;
-  switch (np->priority) {
-    case 0:
-      insert_queue(&prio0, np);
-      break;
-    
-    case 1:
-      insert_queue(&prio1, np);
-      break;
-
-    case 2:
-      insert_queue(&prio2, np);
-      break;
-
-    default:
-      panic("Error: Priority must be a value in (0-2)");
-      break;
   }
 
   // Copy process state from proc.
@@ -549,6 +533,28 @@ scheduler(void)
       if (p == 0) p = peek_queue(&prio0);
 
       if (p != 0) {
+        // Checking for possible starvation
+        struct proc* p1;
+        for (p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++) {
+          if (p1->pid != p->pid) {
+            p1->ticks++;
+
+            // Change from queue 0 to 1
+            if (p1->priority == 0 && p1->ticks > P0TO1) {
+              remove_queue(&prio0, p1);
+              insert_queue(&prio1, p1);
+              p1->ticks = 0;
+            }
+
+            // Change from queue 1 to 2
+            else if (p1->priority == 1 && p1->ticks > P1TO2) {
+              remove_queue(&prio1, p1);
+              insert_queue(&prio2, p1);
+              p1->ticks = 0;
+            }
+          }
+        }
+
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
@@ -803,26 +809,42 @@ setprio(int priority) {
   return 0;
 }
 
-int ps(void) {
+int
+ps(void) {
   struct proc* p;
 
   //Enables interrupts on this processor.
   sti();
   
   acquire(&ptable.lock);
-  cprintf("NAME \t PID \t STATE \t PRIORITY\n");
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-    if (p->state == SLEEPING)
-      cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "SLEEPING", p->priority);
-    else if (p->state == RUNNING)
-      cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "RUNNING", p->priority);
-    else if (p->state == RUNNABLE)
-      cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "RUNNABLE", p->priority);
-  }
+    cprintf("NAME \t PID \t STATE \t PRIORITY\n");
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if (p->state == SLEEPING)
+        cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "SLEEPING", p->priority);
+      else if (p->state == RUNNING)
+        cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "RUNNING", p->priority);
+      else if (p->state == RUNNABLE)
+        cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "RUNNABLE", p->priority);
+    }
 
-  cprintf("Queue 2: "); show_queue(&prio2);
-  cprintf("Queue 1: "); show_queue(&prio1);
-  cprintf("Queue 0: "); show_queue(&prio0);
+    cprintf("Queue 2: "); show_queue(&prio2);
+    cprintf("Queue 1: "); show_queue(&prio1);
+    cprintf("Queue 0: "); show_queue(&prio0);
+  release(&ptable.lock);
+
+  return 0;
+}
+
+int
+update_metrics(void) {
+  struct proc* p;
+  
+  acquire(&ptable.lock);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+      if      (p->state == SLEEPING) p->stime++;
+      else if (p->state == RUNNABLE) p->retime++;
+      else if (p->state == RUNNING)  p->rutime++;
+    }
   release(&ptable.lock);
 
   return 0;

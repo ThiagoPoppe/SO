@@ -52,6 +52,8 @@ struct proc {
 
   int countdown;               // Process preemption countdown
   int priority;                // Process priority (0-2)
+  int ticks;                   // Clock ticks when the process was not running
+
   uint ctime; // Time when process was created
   int stime;  // Sleeping time
   int retime; // Ready time
