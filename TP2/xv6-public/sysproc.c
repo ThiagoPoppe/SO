@@ -103,3 +103,12 @@ int
 sys_ps(void) {
   return ps();
 }
+int
+sys_wait2(void) {
+  int retime, rutime, stime;
+  if (argint(0, &retime) < 0) return -1;
+  if (argint(1, &rutime) < 0) return -1;
+  if (argint(2, &stime)  < 0) return -1;
+
+  return wait2(&retime, &rutime, &stime);
+}
