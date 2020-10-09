@@ -103,6 +103,12 @@ int
 sys_ps(void) {
   return ps();
 }
+
+int
+sys_update_metrics(void) {
+  return update_metrics();
+}
+
 int
 sys_wait2(void) {
   int retime, rutime, stime;
@@ -112,6 +118,7 @@ sys_wait2(void) {
 
   return wait2(&retime, &rutime, &stime);
 }
+
 int
 sys_yield(void) {
   yield();

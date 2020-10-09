@@ -53,6 +53,9 @@ trap(struct trapframe *tf)
       ticks++;
       wakeup(&ticks);
       release(&tickslock);
+      
+      // Updating runtime, sleep time and ready time for each process
+      update_metrics();
     }
     lapiceoi();
     break;
