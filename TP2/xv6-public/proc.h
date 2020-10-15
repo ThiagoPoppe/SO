@@ -50,8 +50,9 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
 
-  int countdown;               // Process preemption countdown
+  // int countdown;               // Process preemption countdown
   int priority;                // Process priority (0-2)
+  int prio_idx;
   int ticks;                   // Clock ticks when the process was not running
 
   uint ctime; // Time when process was created

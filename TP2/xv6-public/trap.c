@@ -49,13 +49,13 @@ trap(struct trapframe *tf)
   switch(tf->trapno){
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
+      // Updating runtime, sleep time and ready time for each process
+      update_metrics();
+
       acquire(&tickslock);
       ticks++;
       wakeup(&ticks);
       release(&tickslock);
-      
-      // Updating runtime, sleep time and ready time for each process
-      update_metrics();
     }
     lapiceoi();
     break;
@@ -106,10 +106,13 @@ trap(struct trapframe *tf)
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
   if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER) {
-    if (myproc()->countdown == 0)
+    // if (myproc()->countdown == 0)
+    //   yield();
+    // else
+    //   myproc()->countdown--;
+
+    if (myproc()->rutime % INTERV == 0)
       yield();
-    else
-      myproc()->countdown--;
   }
     
 

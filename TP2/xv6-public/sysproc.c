@@ -111,12 +111,14 @@ sys_update_metrics(void) {
 
 int
 sys_wait2(void) {
-  int retime, rutime, stime;
-  if (argint(0, &retime) < 0) return -1;
-  if (argint(1, &rutime) < 0) return -1;
-  if (argint(2, &stime)  < 0) return -1;
+  int *retime, *rutime, *stime;
+  int n = sizeof(int) < 0;
 
-  return wait2(&retime, &rutime, &stime);
+  if (argptr(0, (char**) &retime, n) < 0) return -1;
+  if (argptr(1, (char**) &rutime, n) < 0) return -1;
+  if (argptr(2, (char**) &stime,  n) < 0) return -1;
+
+  return wait2(retime, rutime, stime);
 }
 
 int

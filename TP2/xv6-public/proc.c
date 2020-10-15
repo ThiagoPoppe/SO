@@ -25,6 +25,7 @@ static void wakeup1(void *chan);
 typedef struct {
     int tail;
     int size;
+    // int peek_idx;
     struct proc* procs[NPROC];
 } queue_t;
 
@@ -37,13 +38,18 @@ void create_queue(queue_t* q) {
         q->procs[i] = 0;
 }
 
+int capacity_reached() {
+  return (prio0.size + prio1.size + prio2.size) >= NPROC;
+}
+
 // Always insert on end
 void insert_queue(queue_t* q, struct proc* p) {
-    if (q->size == NPROC) {
-        panic("Error: Queue capacity reached");
+    if (capacity_reached()) {
+        panic("Error: Capacity reached");
     }
     else {
         q->procs[q->tail] = p;
+        p->prio_idx = q->tail;
         q->tail++;
         q->size++;
     }
@@ -53,37 +59,52 @@ void insert_queue(queue_t* q, struct proc* p) {
 void remove_queue(queue_t* q, struct proc* p) {
     if (q->size == 0)
         panic("Error: Queue is empty");
+
     else {
-        int pos = 0;
-        while (pos < q->size && q->procs[pos] != p)
-            pos++;
+        // Tentar otimizar
+        int pos = p->prio_idx;
         
-        if (pos == q->size)
-            panic("Error: Process not found in queue");
-        else {
-            if (pos == NPROC-1)
-                q->procs[NPROC-1] = 0;
-            else
-                for (int i = pos; i < q->size-1; i++)
-                    q->procs[i] = q->procs[i+1];
-
-            q->tail--;
-            q->size--;
-        }
+        if (pos == q->size-1)
+            q->procs[q->size-1] = 0;
+        else
+            for (int i = pos; i < q->size-1; i++) {
+              q->procs[i] = q->procs[i+1];
+              q->procs[i]->prio_idx = i;
+            }
+                
+        q->tail--;
+        q->size--;
     }
 }
 
-// Finds first process that is runnable in queue
-struct proc* peek_queue(queue_t* q) {
-  struct proc* p = 0;
+int queue_runnable(queue_t* q) {
   for (int i = 0; i < q->size; i++)
-    if (q->procs[i]->state == RUNNABLE) {
-      p = q->procs[i];
-      break;
-    }
+    if (q->procs[i]->state == RUNNABLE)
+      return 1;
 
-  return p;
+  return 0;
 }
+
+// // Finds first process that is runnable in queue
+// struct proc* peek_queue(queue_t* q) {
+//   // Queue is empty
+//   if (q->size == 0)
+//     return 0;
+  
+//   struct proc* p = 0;
+//   int pos;
+//   for (int i = 0; i < q->size; i++) {
+//     pos = q->peek_idx;
+//     if (q->procs[pos]->state == RUNNABLE) {
+//       p = q->procs[pos];
+//       break;
+//     }
+
+//     q->peek_idx = (q->peek_idx + 1) % q->size;
+//   }
+
+//   return p;
+// }
 
 // Prints processes name's given a queue
 void show_queue(queue_t* q) {
@@ -167,7 +188,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->countdown = INTERV;
+  // p->countdown = INTERV;
   p->ticks = 0;
 
   p->ctime  = ticks;
@@ -434,7 +455,7 @@ wait2(int* retime, int* rutime, int* stime)
         *retime = p->retime;
         *rutime = p->rutime;
         *stime  = p->stime;
-
+        
         // Removing process from queue
         if (p->priority == 0)
           remove_queue(&prio0, p);
@@ -500,7 +521,7 @@ wait2(int* retime, int* rutime, int* stime)
 //       c->proc = p;
 //       switchuvm(p);
 //       p->state = RUNNING;
-//       p->countdown = INTERV;
+//       // p->countdown = INTERV;
 
 //       swtch(&(c->scheduler), p->context);
 //       switchkvm();
@@ -528,29 +549,40 @@ scheduler(void)
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-      p = peek_queue(&prio2);
-      if (p == 0) p = peek_queue(&prio1);
-      if (p == 0) p = peek_queue(&prio0);
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+        if(p->state != RUNNABLE)
+          continue;
 
-      if (p != 0) {
+        // Picks from prio1 only if prio2 isn't runnable
+        if (p->priority == 1 && queue_runnable(&prio2))
+          continue;
+
+        // Picks from prio0 only if prio1 and prio2 isn't runnable
+        if (p->priority == 0 && (queue_runnable(&prio2) || queue_runnable(&prio1)))
+          continue;
+
         // Checking for possible starvation
         struct proc* p1;
         for (p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++) {
-          if (p1->pid != p->pid) {
+          if (p1->state == RUNNABLE && p1->pid != p->pid) {
             p1->ticks++;
 
-            // Change from queue 0 to 1
+            // Changing from prio0 to prio1
             if (p1->priority == 0 && p1->ticks > P0TO1) {
               remove_queue(&prio0, p1);
               insert_queue(&prio1, p1);
+              
               p1->ticks = 0;
+              p1->priority = 1;
             }
 
-            // Change from queue 1 to 2
-            else if (p1->priority == 1 && p1->ticks > P1TO2) {
+            // Changing from prio1 to prio2
+            if (p1->priority == 1 && p1->ticks > P1TO2) {
               remove_queue(&prio1, p1);
               insert_queue(&prio2, p1);
+              
               p1->ticks = 0;
+              p1->priority = 2;
             }
           }
         }
@@ -561,16 +593,17 @@ scheduler(void)
         c->proc = p;
         switchuvm(p);
         p->state = RUNNING;
-        p->countdown = INTERV; // Reseting countdown
+        // p->countdown = INTERV;
 
         swtch(&(c->scheduler), p->context);
         switchkvm();
-      }
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+      }
     release(&ptable.lock);
+
   }
 }
 
@@ -827,9 +860,9 @@ ps(void) {
         cprintf("%s \t %d \t %s \t %d\n", p->name, p->pid, "RUNNABLE", p->priority);
     }
 
-    cprintf("Queue 2: "); show_queue(&prio2);
-    cprintf("Queue 1: "); show_queue(&prio1);
-    cprintf("Queue 0: "); show_queue(&prio0);
+    cprintf("Queue 2 (size=%d): ", prio2.size); show_queue(&prio2);
+    cprintf("Queue 1 (size=%d): ", prio1.size); show_queue(&prio1);
+    cprintf("Queue 0 (size=%d): ", prio0.size); show_queue(&prio0);
   release(&ptable.lock);
 
   return 0;

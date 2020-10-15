@@ -13,5 +13,5 @@
 #define FSSIZE       1000  // size of file system in blocks
 #define INTERV       5 // interval of preemption
 
-#define P0TO1        10 // Aging constant to change from prio 0 to 1
-#define P1TO2        5  // Aging constant to change from prio 1 to 2
+#define P0TO1        30 // Aging constant to change from prio 0 to 1
+#define P1TO2        30 // Aging constant to change from prio 1 to 2
