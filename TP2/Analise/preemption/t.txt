@@ -1,0 +1,1 @@
+P0TO1 = P1TO2 = 30, que foi o ótimo observado
