@@ -1,0 +1,48 @@
+Sistemas Operacionais - Sistemas de Arquivos (Implementação)
+
+- Sistemas de arquivos em camadas. Caminhamento por camadas onde a camada
+  inferior é mais baixo nível que as anteriores. O sistema de arquivos lógico
+  controla os metadados, ou seja, traduz nomes de arquivos no identificador e
+  controla proteção.
+
+- Sistema de arquivos virtual (VFS). É uma abstração orientada a objetos onde
+  diferentes tipos de arquivos implementam uma interface. Interface do kernel
+  é para VFS, não sistemas específicos.
+
+- Abertura: começa com a chamada de sistema open(filename). A partir da
+  estrutura de diretório teremos uma conversão de nome para PCB. Se existir
+  carregamos, senão criamos e colocamos na tabela de arquivos abertos.
+
+- Leitura: começa com a chamada de sistema read(filedesc). A verificação
+  será dada através da tabela de arquivos abertos no sistema.
+
+- Escrita: fluxo bastante similar com os anteriores.
+
+- Diretórios:
+  - Lista linear, simples mas ineficiente.
+  - Hash, nomes são usados como chaves e devemos lidar com colisões
+  - Árvores de pesquisa (árvores B), busca eficiente.
+
+- Podemos ter alocação contígua. O acesso sequencial é simples, acesso direto
+  também. Porém temos desperdício de espaço (frag. ext.) podendo usar relocação.
+
+- Mapeamento com lista encadeada. Acesso sequencial é simples, acesso direto é
+  trabalhoso e é suscetível a erros. Podemos utilizar uma tabela global chamada
+  FAT que armazena os ponteiros para o próximo bloco. O acesso sequencial ainda
+  é simples, acesso direto é mediano, FAT fica na memória (exemplo: DOS).
+
+- Mapeamento com índices. Acesso sequencial e direto simples, podemos manter o 
+  índice na memória, tendo um índice por arquivo. Os índices podem ser guardados
+  em blocos, lista encadeada, multi-nível e híbrido (exemplo: UNIX).
+
+- Logs:
+  - A localização aleatória de blocos e índices aumenta a chance de inconsistências
+  - Reduz perdas e aumenta desempenho
+  - Todas as alterações são primeiro registradas no log
+  - Log é processado assincronamente, tarefas são efetivamente executadas
+  - Se o sistema falha, o log deve ser lido e tarefas incompletas podem ser
+    reativadas (replayed).
+
+  - Logging registra-se inclusive blocos de dados
+  - Journaling registra-se apenas meta-dados, desempenho semelhante/melhor que
+    logging.

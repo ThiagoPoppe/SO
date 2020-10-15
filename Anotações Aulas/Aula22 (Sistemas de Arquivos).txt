@@ -1,0 +1,73 @@
+Sistemas Operacionais - Sistemas de Arquivos
+
+- Responsável pelo mapeamento do espaço de endereçamento para o armazenamento
+  secundário (disco).
+
+- Atributos de um arquivo:
+  - Nome
+  - Tipo (implícito, explícito, estimado)
+  - Localização e tamanho
+  - Proteção e "Proprietário"
+
+- Operações essenciais:
+  - Criar e remover
+  - Ler e escrever
+  - Truncar e definir o tamanho
+  - Otimizações (tabela de arquivos ativos): abrir e fechar
+
+- Estrutura intrínseca do arquivo:
+  - Nenhuma, que seria uma sequência de palavras ou bytes
+  - Com registros simples, onde temos comprimento fixo, variável, linhas
+  - Complexas, onde temos documentos formatados e arquivo com código objeto
+    relocável
+  - Pode ser implementada sobre a seq. de bytes com campos de controle.
+
+- Métodos de acesso:
+  - Sequencial
+  - Acessos direto, onde lemos/escrevemos a partir de uma posição X.
+  - Acesso sequencial com posicionamento, onde lemos/escrevemos de forma
+    sequencial a partir de uma posição X.
+
+- Estrutura de diretório:
+  - Forma de organização para facilitar acessos, onde temos um conjunto de
+    entradas para identificação e localização dos arquivos.
+  - Diretório e arquivos são armazenados em disco.
+
+- Operações sobre diretórios:
+  - Procurar um arquivo
+  - Criar e remover um arquivo
+  - Listar um diretório
+  - Renomear um arquivo e percorrer o sistema de arquivos
+
+- Diretórios em árvore:
+  - Busca e agrupamento eficiente
+  - Noção de diretório corrente (de trabalho)
+  - Identificação absoluta ou relativa ao dir. corrente
+  - Diretórios podem conter arquivos e sub-diretórios
+
+- Diretórios como grafos:
+  - Um repositório de elementos de acesso para arquivos (outros dir.)
+  - É possível ter múltiplos pontos de acesso para um arquivo/dir.
+  - Hoje em dia, os diretórios são representados dessa forma
+  - Possibilidade em compartilhar arquivos entre usuarios e navegação de forma
+    não esturutura.
+
+  - Devemos ter cuidado na remoção, visto que a remoção pode deixar pontas soltas.
+    Algumas soluções é ter ponteiros de retorno (backpointers) ou contador de ref.
+
+- Montagem é o passo onde os arquivos ficam visíveis/acessíveis. Montar significa
+  ler os dados da memória e criar links para ele no ambiente do usuário.
+
+- Sistemas de arquivos distribuídos compartilham arquivos pela rede, abstraindo
+  todo o acesso para o usuário. Semântica de acesso e compartilhamento se torna
+  ainda mais complexa. Exemplos são: NFS, SMB e AFS.
+
+- Proteção:
+  - Sistemas multi-usuário
+  - O que pode ser feito com cada arquivo e quem pode acessar/modificar?
+  - Formas:
+    - Controle por classes, para cada classe de usuário definimos o que pode ser
+      feito (dono, grupo do dono, outros).
+    - Listas de controle de acesso, para cada arquivo quem pode fazer o quê.
+    - Controle por chave de acesso, onde o S.O. exige que o usuário apresente
+      uma chave, sendo mais usual uma por arquivo.
